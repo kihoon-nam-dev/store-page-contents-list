@@ -1,51 +1,99 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { InputGroup, FormControl } from 'react-bootstrap';
+import { InputGroup, Button } from 'react-bootstrap';
 import {
   MdCheckBoxOutlineBlank,
   MdCheckBox,
 } from 'react-icons/md';
 import cn from 'classnames';
 import './App.scss';
-import { SET_CONTENTSLIST, SET_FILTER, RESET_FILTER } from './index.js';
+import { SET_CONTENTSLIST, SET_FILTER, RESET_FILTER, CANCEL_SET_FILTER } from './index.js';
 
 import axios from 'axios';
 
 function App() {
+  var state = useSelector((state) => state);
+  let [contentsList, chgContentsList] = useState([]);
   let [loading, chgLoading ] = useState(true);
-  //let [pricingOption, chgPricingOption] = useState(["PAID","FREE","VIEW_ONLY"]);
   let initPricingOptions = [
     {
       name : "PAID",
+      value : 0,
       isChecked : false
     },
     {
       name : "FREE",
+      value : 1,
       isChecked : false
     },
     {
       name : "VIEW_ONLY",
+      value : 2,
       isChecked : false
     }
   ];
   let [pricingOptions, chgPricingOptions] = useState(initPricingOptions);
-  
-  let contentsListState = useSelector((state) => state.contentsListReducer);
-  let searchFilterState = useSelector((state) => state.searchFilterReducer);
   let dispatch = useDispatch();
-  var [searchResultItem, chgSearchResultItem] = useState([]);
+  
+  const searchResultTable = useCallback(
+    state => {
+      const { contentsListReducer, searchFilterReducer } = state;
+      console.log("contentsListReducer : ", contentsListReducer);
+      console.log("searchFilterReducer : ", searchFilterReducer);
+      const hasFilter = Object.values(searchFilterReducer).reduce((result, value) => result || Boolean(value), false);
+      const { ids, entities } = contentsListReducer;
+      const items = ids
+        .map(id => entities[id])
+        .filter(
+          entity =>
+            !hasFilter ||
+            Object.entries(searchFilterReducer).reduce(
+              (result, [key, value]) => result && (!value || `${entity[key]}` === `${value}`),
+              true,
+            ),
+        );
+      
+      console.log("items : ", items);
+      chgContentsList(items);
+    }
+  ) 
 
   useEffect(() => {
     axios.get('https://closet-sample.azurewebsites.net/api/data')
     .then((res) => {
-        dispatch({ type: SET_CONTENTSLIST, payload: [...res.data]})
-        chgLoading(false);
+      
+      //chgContentsList([res.data]);
+      //console.log("1.contentsList:",contentsList);
+      // var arr = localStorage.getItem('contentsList');
+      // if(arr == null) {
+      //     arr = []
+      // } else {
+      //     arr = JSON.parse(arr);
+      // }
+
+      // arr.push(contentsList);
+
+      // localStorage.setItem('contentsList', JSON.stringify(arr));
+
+      //dispatch({ type: SET_CONTENTSLIST, payload: [res.data] })
+      chgContentsList([...res.data])
+      chgLoading(false);
+      console.log("1.beforeSearchResultTable : ", state);
+      //searchResultTable(state);
+      console.log("1.afterSearchResultTable : ", state);
     })
     .catch(() => {
-        chgLoading(false);
-        console.log("Failed.");
+      chgLoading(false);
+      console.log("Failed.");
     })  
   },[]);
+
+  // useEffect(() => {
+  //   console.log("2.beforeSearchResultTable : ", state);
+  //   searchResultTable(state);
+  //   console.log("2.afterSearchResultTable : ", state);
+  //   console.log("contentsList : ", contentsList);
+  // },[pricingOptions]);
   
   return (
     <div className="App">
@@ -69,18 +117,26 @@ function App() {
                 onClick={() => { 
                   var copy = [...pricingOptions];
                   copy[i].isChecked = !copy[i].isChecked;
+                  copy[i].isChecked ? 
+                    dispatch({ type: SET_FILTER, payload : { filterName: "pricingOption", value: copy[i].value }})
+                    : dispatch({ type: CANCEL_SET_FILTER, payload : { filterName: copy[i].name, value: copy[i].isChecked }});
+
                   chgPricingOptions(copy);
-                  pricingOption.isChecked ? 
-                    dispatch({ type: 'SET_FILTER', payload : { filterName: "pricingOption", value: pricingOption.name }})
-                    : dispatch({ type: 'CANCEL_SET_FILTER', payload : { filterName: "pricingOption", value: pricingOption.name }});
-                  
+                  //searchResultTable(state);
                 }}>
                 {pricingOption.isChecked ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
                 <div className="text">{pricingOption.name}</div>
               </div>
             })
           }
+          <Button variant="outline-secondary" id="button-addon2" onClick={() => { 
+            chgPricingOptions(initPricingOptions);
+            dispatch({ type: RESET_FILTER })
+          }}>
+            RESET
+          </Button>
         </InputGroup>
+        
       </div>
       
       {/* Contents list area */}
@@ -91,7 +147,7 @@ function App() {
             loading === true ? 
               <div><h4>Loading...</h4></div> 
               :
-              contentsListState.contentsList.map((content, i) => {
+              contentsList.map((content, i) => {
                 return <ContentsList content={content} i={i} key={i}/>
               })
           }
@@ -100,6 +156,7 @@ function App() {
     </div>
   );
 }
+  
 
 function ContentsList(props) {
   return (
@@ -110,7 +167,5 @@ function ContentsList(props) {
       </div>
   );
 }
-
-
 
 export default App;
