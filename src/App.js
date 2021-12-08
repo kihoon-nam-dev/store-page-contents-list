@@ -99,13 +99,12 @@ function App() {
     <div className="App">
       {/* Nav area */}
       <nav className="navbar navbar-light bg-light">
-        <span className="navbar-brand mb-0 h1">Connect</span>
+        <span className="navbar-brand mb-0 h1" class = "text-success">Connect</span>
       </nav>
 
       {/* Contents Filter area */}
-   
       <div className="container">
-        1.Contents Filter
+        <p class = "text-success">① Contents Filter</p>
         <InputGroup className="mb-3">
           <InputGroup.Text id="inputGroup-sizing-default">Pricing Option</InputGroup.Text>
           {       
@@ -136,12 +135,11 @@ function App() {
             RESET
           </Button>
         </InputGroup>
-        
       </div>
       
       {/* Contents list area */}
       <div className="container">
-        2.Contents List
+        <p class = "text-success">② Contents List</p>
         <div className="row">
           {       
             loading === true ? 
@@ -163,7 +161,7 @@ function ContentsList(props) {
       <div className="col-md-4">
         <img src={props.content.imagePath} width="100%" height="70%"/>
         <h4>{ props.content.creator }</h4>
-        <p> { props.content.title } | { props.content.price } </p>
+        <p> { props.content.title } | $ { props.content.price } </p>
       </div>
   );
 }
