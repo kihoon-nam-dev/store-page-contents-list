@@ -7,7 +7,6 @@ import {
 } from 'react-icons/md';
 import cn from 'classnames';
 import './App.scss';
-import { SET_CONTENTSLIST, SET_FILTER, RESET_FILTER } from './index.js';
 
 import axios from 'axios';
 
@@ -30,22 +29,50 @@ function App() {
   ];
   let [pricingOptions, chgPricingOptions] = useState(initPricingOptions);
   
-  let contentsListState = useSelector((state) => state.contentsListReducer);
-  let searchFilterState = useSelector((state) => state.searchFilterReducer);
+  let state = useSelector((state) => state.reducer);
   let dispatch = useDispatch();
   var [searchResultItem, chgSearchResultItem] = useState([]);
 
   useEffect(() => {
     axios.get('https://closet-sample.azurewebsites.net/api/data')
     .then((res) => {
-        dispatch({ type: SET_CONTENTSLIST, payload: [...res.data]})
+        //chgContents([...res.data]);
+        //console.log("contents:", contents);
+        //dispatch({ type: 'SET_CONTENTSLIST', payload: contents})
+        dispatch({ type: 'SET_CONTENTSLIST', payload: [...res.data]})
         chgLoading(false);
+        //items = SearchResult();
+        //console.log("items : ", items)
     })
     .catch(() => {
         chgLoading(false);
         console.log("Failed.");
     })  
   },[]);
+
+  useEffect(() =>{
+    console.log("test!");
+  
+    console.log("state : ",state);
+  
+    const { contentsList, searchFilter } = state;
+    var args = searchFilter || []; 
+    //const hasFilter = Object.values(searchFilter).reduce((result, value) => result || Boolean(value), false);
+    const hasFilter = Object.values(args).reduce((result, value) => result || Boolean(value), false);
+    const { ids, entities } = contentsList;
+    const items = ids
+      .map(id => entities[id])
+      .filter(
+        entity =>
+          !hasFilter ||
+          Object.entries(searchFilter).reduce(
+            (result, [key, value]) => result && (!value || `${entity[key]}` === `${value}`),
+            true,
+          ),
+      );
+    chgSearchResultItem(items);
+
+  },[pricingOptions])
   
   return (
     <div className="App">
@@ -91,9 +118,17 @@ function App() {
             loading === true ? 
               <div><h4>Loading...</h4></div> 
               :
-              contentsListState.contentsList.map((content, i) => {
-                return <ContentsList content={content} i={i} key={i}/>
-              })
+              console.log("test2") 
+              //contents.map((content, i) => {
+             
+             
+              // state.contentsList.map((content, i) => {
+              //   return <ContentsList content={content} i={i} key={i}/>
+              // })
+
+              // items.map((content, i) => {
+              //   return <ContentsList content={content} i={i} key={i}/>
+              // })
           }
         </div>
       </div>
